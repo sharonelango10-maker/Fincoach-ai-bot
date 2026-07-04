@@ -92,3 +92,6 @@ To extend FinCoach beyond it's environment into a standalone web app:
 
 ---
 
+## Author - **Sharon** **Elango**
+Edunet Foundation × IBM SkillsBuild AICTE Internship Program
+
