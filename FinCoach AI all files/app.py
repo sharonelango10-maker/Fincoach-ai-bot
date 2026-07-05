@@ -3,7 +3,7 @@ FinCoach — AI-Powered Personal Finance Coach
 Powered by IBM watsonx.ai (Granite) | Flask Web App
 
 Run:
-    pip install -r requirements.txt
+    pip install -r requirements.txt 
     python app.py
 Then open: http://localhost:5000
 """
