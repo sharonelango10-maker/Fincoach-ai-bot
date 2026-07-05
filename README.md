@@ -10,7 +10,7 @@ This project was built as part of the **Edunet Foundation IBM SkillsBuild Intern
 
 ##  Purpose
 
-Many people find budgeting tools intimidating or overly technical. FinCoach aims to make financial self-awareness approachable — like chatting with a supportive friend who's good with money, rather than filling out a spreadsheet or talking to a strict accountant.
+Many people find budgeting tools intimidating or overly technical. FinCoach AI aims to make financial self-awareness approachable, almost like chatting with a supportive friend who's good with money, rather than filling out a spreadsheet or talking to a strict accountant.
 
 ---
 
@@ -21,7 +21,7 @@ FinCoach was built iteratively, starting simple and layering in complexity once 
 ### Version 1 — Initial Concept (Detailed)
 A full-featured first draft including:
 - Income and category-wise expense collection
-- Analysis based on standard budgeting guidelines (e.g., 50/30/20 rule)
+- Analysis based on standard budgeting guidelines 
 - Category breakdowns and overspending flags
 - Follow-up Q&A support
 
@@ -30,7 +30,7 @@ Scaled down to the essentials for an easier first build:
 - Ask for income → ask for main expenses → calculate savings → give 2–3 tips → short summary
 - Prioritized getting a working bot over feature completeness
 
-### Version 3 — Interactive Chat Flow
+### Version 3 (final) — Interactive Chat Flow
 Refined to feel like a real conversation rather than a static form:
 - Bot asks one question at a time and waits for the user's reply
 - Messages kept short and conversational
@@ -69,9 +69,9 @@ Since Bob primarily shapes the bot's *response formatting* (not the chat window'
 
 To extend FinCoach beyond it's environment into a standalone web app:
 
-- **Backend:** Python Flask, with routes for chat, dashboard data, goal calculations, and family/household profile management.
+- **Backend:** Python Flask, with routes for chat, goal calculations, and family/household profile management.
 - **AI Integration:** IBM Watsonx.ai with Granite models, API key secured via a `.env` file (never hardcoded).
-- **Frontend:** Bootstrap-based responsive UI with dark mode, animations, a chat interface, a finance dashboard (Chart.js visualizations), a savings goal tracker widget, and a family/household budget profile section.
+- **Frontend:** Bootstrap-based responsive UI with dark mode, animations, a chat interface, a savings goal tracker widget, and a family/household budget profile section.
 - **Deliverables:** Complete backend + frontend code, `requirements.txt`, and deployment instructions.
 
 ---
@@ -79,7 +79,7 @@ To extend FinCoach beyond it's environment into a standalone web app:
 ##  Tools & Technologies
 
 - **IBM Bob** — AI-assisted agent builder
--  Python Flask, IBM Watsonx.ai (Granite models), Bootstrap, Chart.js
+-  Python Flask, IBM Watsonx.ai, Bootstrap
 
 ---
 
@@ -88,10 +88,9 @@ To extend FinCoach beyond it's environment into a standalone web app:
 - Building iteratively (MVP → features → polish) made testing and debugging much easier than trying to build everything at once.
 - A simplified first version still produces a fully functional bot — complexity can always be layered in afterward.
 - Conversational UX (one question at a time, short messages) is essential for a natural chatbot feel versus a rigid form-like interaction.
-- Thoughtful response formatting (bullets, bold text, emojis, progress bars) meaningfully improves perceived quality, even without a custom front-end.
+- Thoughtful response formatting (bullets, bold text, emojis, progress bars) meaningfully improves perceived quality, even without a customized front-end.
 
 ---
 
 ## Author - **Sharon** **Elango**
 Edunet Foundation × IBM SkillsBuild AICTE Internship Program
-
