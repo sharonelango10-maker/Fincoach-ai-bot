@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FinCoach — AI Finance Coach</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --bg:        #f7f8fa;
+      --surface:   #ffffff;
+      --border:    #e5e7eb;
+      --text:      #1f2328;
+      --muted:     #6b7280;
+      --accent:    #3b82f6;
+      --accent-dk: #2563eb;
+      --good:      #22c55e;
+      --warn:      #f59e0b;
+      --over:      #ef4444;
+      --nav-bg:    #1e293b;
+      --nav-text:  #e2e8f0;
+      --card-sh:   0 1px 3px rgba(0,0,0,.08);
+    }
+    [data-theme="dark"] {
+      --bg:        #0f172a;
+      --surface:   #1e293b;
+      --border:    #334155;
+      --text:      #f1f5f9;
+      --muted:     #94a3b8;
+      --accent:    #60a5fa;
+      --accent-dk: #3b82f6;
+      --nav-bg:    #0f172a;
+      --nav-text:  #e2e8f0;
+      --card-sh:   0 1px 3px rgba(0,0,0,.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; transition: background .2s, color .2s, border-color .2s; }
+    body { font-family: -apple-system,"Segoe UI",system-ui,sans-serif; font-size: 15px; line-height: 1.6; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* ── Navbar ── */
+    .navbar { background: var(--nav-bg) !important; border-bottom: 1px solid var(--border); padding: 10px 20px; flex-shrink: 0; }
+    .navbar-brand { color: var(--nav-text) !important; font-weight: 700; font-size: 19px; display: flex; align-items: center; gap: 8px; }
+    .brand-badge { background: var(--accent); border-radius: 8px; padding: 3px 9px; font-size: 13px; color: #fff; font-weight: 700; }
+    .nav-link { color: var(--nav-text) !important; opacity: .75; font-size: 14px; padding: 6px 12px !important; border-radius: 6px; }
+    .nav-link:hover, .nav-link.active { opacity: 1; background: rgba(255,255,255,.08); }
+    #darkToggle { background: transparent; border: 1px solid rgba(255,255,255,.2); color: var(--nav-text); border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 15px; }
+    #darkToggle:hover { background: rgba(255,255,255,.1); }
+
+    /* ── Tabs ── */
+    .page-section          { display: none; flex: 1; overflow: hidden; }
+    .page-section.active   { display: flex; flex-direction: column; }
+
+    /* ── Shared card ── */
+    .fc-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--card-sh); }
+
+    /* ── CHAT ── */
+    .chat-wrap { display: flex; flex-direction: column; flex: 1; max-width: 800px; margin: 0 auto; width: 100%; padding: 0 12px; overflow: hidden; }
+    #chatBox { flex: 1; overflow-y: auto; padding: 20px 0 10px; display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth; }
+
+    .msg { display: flex; gap: 9px; align-items: flex-start; animation: slideUp .22s ease both; }
+    @keyframes slideUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .msg.bot  { flex-direction: row; }
+    .msg.user { flex-direction: row-reverse; }
+    .av { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; margin-top:2px; }
+    .msg.bot  .av { background:var(--accent); color:#fff; }
+    .msg.user .av { background:var(--border); color:var(--muted); }
+    .bubble { max-width:78%; padding:10px 14px; border-radius:14px; font-size:14.5px; line-height:1.65; white-space:pre-wrap; word-break:break-word; }
+    .msg.bot  .bubble { background:var(--surface); border:1px solid var(--border); border-top-left-radius:4px; }
+    .msg.user .bubble { background:var(--accent); color:#fff; border-top-right-radius:4px; }
+
+    .typing-bubble { background:var(--surface); border:1px solid var(--border); border-radius:14px; border-top-left-radius:4px; padding:12px 16px; display:flex; gap:5px; align-items:center; }
+    .dot { width:7px; height:7px; border-radius:50%; background:var(--muted); animation:bounce 1.2s infinite ease-in-out; }
+    .dot:nth-child(2){animation-delay:.2s} .dot:nth-child(3){animation-delay:.4s}
+    @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }
+
+    .breakdown-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; border-top-left-radius:4px; padding:14px 16px; max-width:78%; font-size:13.5px; }
+    .breakdown-card h6 { font-size:11.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px; }
+    .cat-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+    .cat-lbl { width:120px; font-size:13px; flex-shrink:0; color:var(--text); }
+    .bar-wrap { flex:1; background:var(--bg); border-radius:6px; height:7px; overflow:hidden; }
+    .bar-fill { height:100%; border-radius:6px; transition:width .6s ease; }
+    .bar-fill.good    { background:var(--good); }
+    .bar-fill.warning { background:var(--warn); }
+    .bar-fill.over    { background:var(--over); }
+    .cat-pct  { font-size:12px; color:var(--muted); width:34px; text-align:right; flex-shrink:0; }
+    .cat-icon { width:18px; text-align:center; font-size:13px; flex-shrink:0; }
+    .bd-divider { border:none; border-top:1px solid var(--border); margin:8px 0; }
+    .bd-totals { display:flex; flex-direction:column; gap:3px; font-size:13px; }
+    .bd-row { display:flex; justify-content:space-between; }
+    .bd-row .bl { color:var(--muted); } .bd-row .bv { font-weight:600; }
+    .bv.pos { color:var(--good); } .bv.neg { color:var(--over); }
+
+    .goal-msg-card { background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; border-top-left-radius:4px; padding:13px 16px; max-width:78%; font-size:13.5px; }
+    [data-theme="dark"] .goal-msg-card { background:#1e3a5f; border-color:#2563eb; }
+    .goal-msg-card h6 { font-size:11.5px; font-weight:700; color:#1d4ed8; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; }
+    [data-theme="dark"] .goal-msg-card h6 { color:#93c5fd; }
+    .gr-row { display:flex; justify-content:space-between; padding:2px 0; border-bottom:1px solid #dbeafe; font-size:13px; }
+    [data-theme="dark"] .gr-row { border-color:#1e40af; }
+    .gr-row:last-of-type { border-bottom:none; }
+    .gr-row .gl { color:var(--muted); } .gr-row .gv { font-weight:600; }
+    .goal-badge { margin-top:8px; padding:5px 10px; border-radius:6px; font-size:12.5px; font-weight:600; }
+    .goal-badge.yes { background:#dcfce7; color:#15803d; }
+    .goal-badge.no  { background:#fee2e2; color:#b91c1c; }
+    [data-theme="dark"] .goal-badge.yes { background:#14532d; color:#86efac; }
+    [data-theme="dark"] .goal-badge.no  { background:#7f1d1d; color:#fca5a5; }
+
+    .chip-row { display:flex; flex-wrap:wrap; gap:7px; padding-left:43px; }
+    .chip { background:var(--bg); border:1px solid #bfdbfe; border-radius:20px; padding:5px 12px; font-size:13px; color:var(--accent); cursor:pointer; font-family:inherit; transition:background .15s; }
+    .chip:hover { background:var(--border); }
+
+    .chat-input-wrap { border-top:1px solid var(--border); background:var(--surface); padding:12px 0 14px; flex-shrink:0; }
+    .chat-input-inner { display:flex; gap:10px; align-items:flex-end; max-width:800px; margin:0 auto; padding:0 12px; }
+    #userInput { flex:1; border:1px solid var(--border); border-radius:10px; padding:9px 13px; font-size:14.5px; font-family:inherit; resize:none; outline:none; line-height:1.5; max-height:110px; overflow-y:auto; background:var(--bg); color:var(--text); transition:border-color .15s; }
+    #userInput:focus { border-color:var(--accent); }
+    #userInput::placeholder { color:var(--muted); }
+    #userInput:disabled { opacity:.5; cursor:not-allowed; }
+    #sendBtn { background:var(--accent); color:#fff; border:none; border-radius:10px; width:42px; height:42px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; transition:background .15s; }
+    #sendBtn:hover:not(:disabled) { background:var(--accent-dk); }
+    #sendBtn:disabled { opacity:.5; cursor:not-allowed; }
+
+    /* ── GOAL TRACKER ── */
+    #goalSection { overflow-y: auto; }
+    .goal-inner { max-width:700px; margin:0 auto; padding:24px 16px; }
+    .dash-title { font-size:20px; font-weight:700; margin-bottom:18px; display:flex; align-items:center; gap:8px; }
+    .section-head { font-size:16px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:7px; }
+    .kpi-label { font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:4px; }
+    .progress { height:14px; border-radius:10px; background:var(--bg); overflow:hidden; }
+    .progress-bar { height:100%; border-radius:10px; transition:width .8s ease; }
+    .goal-result-card { border-radius:12px; padding:18px 20px; }
+    .goal-result-card.achievable     { background:#dcfce7; border:1px solid #86efac; }
+    .goal-result-card.not-achievable { background:#fee2e2; border:1px solid #fca5a5; }
+    [data-theme="dark"] .goal-result-card.achievable     { background:#14532d; border-color:#16a34a; }
+    [data-theme="dark"] .goal-result-card.not-achievable { background:#7f1d1d; border-color:#dc2626; }
+    .form-control { background:var(--bg)!important; color:var(--text)!important; border-color:var(--border)!important; font-size:14px; }
+    .form-control:focus { border-color:var(--accent)!important; box-shadow:none!important; }
+    .form-label { font-size:13.5px; font-weight:600; color:var(--text); }
+    .btn-primary { background:var(--accent); border-color:var(--accent); font-size:14px; }
+    .btn-primary:hover { background:var(--accent-dk); border-color:var(--accent-dk); }
+    .fade-in { animation:fadeIn .3s ease; }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+    /* ── FAMILY BUDGET ── */
+    #familySection { overflow-y: auto; }
+    .family-inner { max-width:900px; margin:0 auto; padding:24px 16px; }
+    .member-form { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px 20px; margin-bottom:14px; position:relative; }
+    .remove-btn { position:absolute; top:12px; right:14px; background:transparent; border:none; color:var(--muted); font-size:18px; cursor:pointer; }
+    .remove-btn:hover { color:var(--over); }
+    .member-badge { display:inline-block; background:var(--accent); color:#fff; border-radius:6px; font-size:12px; font-weight:700; padding:2px 8px; margin-bottom:10px; }
+    .exp-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; margin-top:10px; }
+    .exp-field label { font-size:12.5px; color:var(--muted); display:block; margin-bottom:3px; }
+    .exp-field input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:7px; padding:6px 10px; font-size:13.5px; color:var(--text); outline:none; }
+    .exp-field input:focus { border-color:var(--accent); }
+    .member-chip { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; }
+    .member-name { font-weight:600; font-size:14px; }
+    .member-meta { font-size:12.5px; color:var(--muted); }
+    .badge-save { font-size:12px; font-weight:600; padding:3px 9px; border-radius:20px; }
+    .badge-save.good { background:#dcfce7; color:#15803d; }
+    .badge-save.warn { background:#fef3c7; color:#92400e; }
+    .badge-save.over { background:#fee2e2; color:#991b1b; }
+
+    @media(max-width:576px) {
+      .bubble { max-width:90%; }
+      .exp-grid { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Navbar ── -->
+<nav class="navbar navbar-expand-md">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">
+      <span class="brand-badge">FC</span> FinCoach
+    </a>
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <span class="navbar-toggler-icon" style="filter:invert(1)"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav ms-auto align-items-center gap-1">
+        <li class="nav-item"><a class="nav-link active" href="#" data-tab="chat">       <i class="bi bi-chat-dots me-1"></i>Chat</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" data-tab="goal">      <i class="bi bi-bullseye me-1"></i>Goal Tracker</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" data-tab="family">    <i class="bi bi-people me-1"></i>Family Budget</a></li>
+        <li class="nav-item ms-2"><button id="darkToggle" title="Toggle dark mode"><i class="bi bi-moon-stars-fill"></i></button></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- ── TAB 1: CHAT ── -->
+<section id="chatSection" class="page-section active">
+  <div class="chat-wrap">
+    <div id="chatBox"></div>
+  </div>
+  <div class="chat-input-wrap">
+    <div class="chat-input-inner">
+      <textarea id="userInput" rows="1" placeholder="Ask FinCoach anything about your finances…"></textarea>
+      <button id="sendBtn" title="Send">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+    <div style="max-width:800px;margin:0 auto;padding:4px 12px 0;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:12px;color:var(--muted)"><i class="bi bi-shield-check me-1"></i>Session-only — no financial data is stored.</span>
+      <button class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:12px;" id="newChatBtn"><i class="bi bi-arrow-counterclockwise me-1"></i>New chat</button>
+    </div>
+  </div>
+</section>
+
+
+<section id="goalSection" class="page-section">
+  <div class="goal-inner">
+    <div class="dash-title"><i class="bi bi-bullseye"></i> Savings Goal Tracker</div>
+
+    <div class="fc-card p-4 mb-4">
+      <div class="row g-3">
+        <div class="col-sm-6">
+          <label class="form-label">Currency symbol</label>
+          <input type="text" class="form-control" id="goalCurrency" value="₹" maxlength="3">
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label">Savings goal amount</label>
+          <input type="number" class="form-control" id="goalTarget" placeholder="e.g. 100000" min="1">
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label">Timeframe (months)</label>
+          <input type="number" class="form-control" id="goalMonths" placeholder="e.g. 12" min="1">
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label">Current monthly saving</label>
+          <input type="number" class="form-control" id="goalCurrentSaving" placeholder="e.g. 5000" min="0">
+        </div>
+        <div class="col-12">
+          <button class="btn btn-primary w-100" id="calcGoalBtn"><i class="bi bi-calculator me-2"></i>Calculate Goal Plan</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="goalResult" class="fade-in" style="display:none"></div>
+
+    <div class="fc-card p-3 mt-4">
+      <div class="section-head"><i class="bi bi-lightning-charge"></i>Quick Goals</div>
+      <div class="d-flex flex-wrap gap-2">
+        <button class="chip" data-goal="50000"   data-months="6" >Emergency Fund ₹50k / 6mo</button>
+        <button class="chip" data-goal="100000"  data-months="12">₹1 Lakh / 12 months</button>
+        <button class="chip" data-goal="500000"  data-months="24">₹5 Lakh / 2 years</button>
+        <button class="chip" data-goal="1000000" data-months="36">₹10 Lakh / 3 years</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TAB 3: FAMILY BUDGET ── -->
+<section id="familySection" class="page-section">
+  <div class="family-inner">
+    <div class="dash-title"><i class="bi bi-house-heart"></i> Family / Household Budget</div>
+
+    <div class="d-flex gap-2 mb-3 flex-wrap align-items-center">
+      <button class="btn btn-primary btn-sm" id="addMemberBtn"><i class="bi bi-person-plus me-1"></i>Add Member</button>
+      <button class="btn btn-outline-secondary btn-sm" id="clearFamilyBtn"><i class="bi bi-trash me-1"></i>Clear All</button>
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <label class="form-label mb-0" style="font-size:13px;font-weight:600">Currency:</label>
+        <input type="text" id="familyCurrency" class="form-control form-control-sm" style="width:70px" value="₹" maxlength="3">
+      </div>
+    </div>
+
+    <div id="memberForms"></div>
+
+    <button class="btn btn-success w-100 mt-2" id="analyseHouseholdBtn">
+      <i class="bi bi-graph-up me-2"></i>Analyse Household Budget
+    </button>
+
+    <div id="householdSummary" class="mt-4 fade-in" style="display:none"></div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* ── STATE ── */
+let memberCount = 0;
+
+/* ── DARK MODE ── */
+const darkToggle = document.getElementById('darkToggle');
+darkToggle.addEventListener('click', () => {
+  const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  darkToggle.innerHTML = t === 'dark' ? '<i class="bi bi-sun-fill"></i>' : '<i class="bi bi-moon-stars-fill"></i>';
+});
+
+/* ── TAB SWITCHING ── */
+document.querySelectorAll('[data-tab]').forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelectorAll('[data-tab]').forEach(l => l.classList.remove('active'));
+    link.classList.add('active');
+    document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+    document.getElementById(link.dataset.tab + 'Section').classList.add('active');
+  });
+});
+
+/* ═══════════════ CHAT ═══════════════ */
+const chatBox    = document.getElementById('chatBox');
+const userInp    = document.getElementById('userInput');
+const sendBtn    = document.getElementById('sendBtn');
+const newChatBtn = document.getElementById('newChatBtn');
+
+const BREAKDOWN_RE = /---\s*SPENDING BREAKDOWN\s*---\n([\s\S]*?)(?=\n\n[A-Z]|\n──|$)/i;
+
+const CAT_THRESHOLDS = {
+  housing:{ max:35,savings:false }, groceries:{ max:15,savings:false },
+  utilities:{ max:8,savings:false }, transport:{ max:10,savings:false },
+  education:{ max:10,savings:false }, medical:{ max:5,savings:false },
+  entertainment:{ max:8,savings:false }, festivals:{ max:5,savings:false },
+  savings:{ min:20,savings:true },
+};
+
+function catCls(label, pct) {
+  const k = label.toLowerCase().replace(/[^a-z]/g,'');
+  for (const [key, cfg] of Object.entries(CAT_THRESHOLDS)) {
+    if (!k.includes(key)) continue;
+    if (cfg.savings) return pct >= cfg.min ? 'good' : pct >= cfg.min * 0.5 ? 'warning' : 'over';
+    return pct <= cfg.max ? 'good' : pct <= cfg.max * 1.5 ? 'warning' : 'over';
+  }
+  return pct <= 10 ? 'good' : pct <= 18 ? 'warning' : 'over';
+}
+function statusIco(cls) { return {good:'✓',warning:'⚠',over:'✗'}[cls]; }
+
+function parseBreakdown(text) {
+  const rows=[]; let totalInc=null, totalExp=null, surplus=null;
+  for (const line of text.split('\n')) {
+    const cm = line.match(/•\s*([^:]+):\s*[^\d\-]*([\d,]+(?:\.\d+)?)\s*\((\d+(?:\.\d+)?)%/);
+    if (cm) { rows.push({ label:cm[1].trim(), pct:parseFloat(cm[3]), cls:catCls(cm[1],parseFloat(cm[3])) }); continue; }
+    const ti = line.match(/Total income:\s*[^\d]*([\d,]+)/i);    if (ti) totalInc = ti[1];
+    const te = line.match(/Total expenses:\s*[^\d]*([\d,]+)/i);  if (te) totalExp = te[1];
+    const su = line.match(/Net surplus:\s*([^\d\-]*)(-?[\d,]+)/i); if (su) surplus = su[2];
+  }
+  return { rows, totalInc, totalExp, surplus };
+}
+
+function buildBreakdownCard(text) {
+  const { rows, totalInc, totalExp, surplus } = parseBreakdown(text);
+  if (!rows.length) return null;
+  const card = document.createElement('div'); card.className = 'breakdown-card';
+  const h = document.createElement('h6'); h.textContent = 'Spending Breakdown'; card.appendChild(h);
+  rows.forEach(({ label, pct, cls }) => {
+    const row = document.createElement('div'); row.className = 'cat-row';
+    const l = document.createElement('span'); l.className='cat-lbl'; l.textContent=label;
+    const w = document.createElement('div');  w.className='bar-wrap';
+    const f = document.createElement('div');  f.className=`bar-fill ${cls}`; f.style.width=Math.min(pct,100)+'%'; w.appendChild(f);
+    const p = document.createElement('span'); p.className='cat-pct'; p.textContent=pct+'%';
+    const i = document.createElement('span'); i.className='cat-icon'; i.textContent=statusIco(cls);
+    row.append(l,w,p,i); card.appendChild(row);
+  });
+  if (totalInc||totalExp||surplus) {
+    const hr = document.createElement('hr'); hr.className='bd-divider'; card.appendChild(hr);
+    const dt = document.createElement('div'); dt.className='bd-totals';
+    const ar = (lbl,val,cls2) => { const r=document.createElement('div'); r.className='bd-row'; r.innerHTML=`<span class="bl">${lbl}</span><span class="bv ${cls2||''}">${val}</span>`; dt.appendChild(r); };
+    if (totalInc) ar('Total income',totalInc,'');
+    if (totalExp) ar('Total expenses',totalExp,'');
+    if (surplus)  { const neg=surplus.includes('-')||parseFloat(surplus.replace(/,/g,''))<0; ar('Net surplus',surplus,neg?'neg':'pos'); }
+    card.appendChild(dt);
+  }
+  return card;
+}
+
+function buildGoalCard(text) {
+  if (!/savings goal|monthly saving|need to save/i.test(text)) return null;
+  const ga = text.match(/goal[:\s]+[^\d]*([\d,]+)/i);
+  const mo = text.match(/(\d+)\s*month/i);
+  const ms = text.match(/monthly saving[^:]*:\s*[^\d]*([\d,]+)/i) || text.match(/need[^\d]*([\d,]+)\s*per month/i);
+  const su = text.match(/surplus[^:]*:\s*[^\d]*([\d,]+)/i) || text.match(/current(?:ly)?\s+saving[^:]*:\s*[^\d]*([\d,]+)/i);
+  if (!ga && !ms) return null;
+  const ok = /achievable|on track|you can/i.test(text) && !/not achievable|won.t|cannot|shortfall/i.test(text);
+  const card = document.createElement('div'); card.className='goal-msg-card';
+  const h = document.createElement('h6'); h.textContent='Savings Goal'; card.appendChild(h);
+  const ar = (l,v) => { const r=document.createElement('div'); r.className='gr-row'; r.innerHTML=`<span class="gl">${l}</span><span class="gv">${v}</span>`; card.appendChild(r); };
+  if (ga) ar('Target',ga[1]); if (mo) ar('Timeframe',mo[1]+' months'); if (ms) ar('Required / month',ms[1]); if (su) ar('Current surplus',su[1]);
+  const b=document.createElement('div'); b.className=`goal-badge ${ok?'yes':'no'}`; b.textContent=ok?'✓ Goal is achievable!':'✗ Needs adjustment — see tips.'; card.appendChild(b);
+  return card;
+}
+
+function mk(tag, cls, txt) { const el=document.createElement(tag); el.className=cls; if(txt!==undefined) el.textContent=txt; return el; }
+
+function renderBot(text) {
+  const hasBd   = BREAKDOWN_RE.test(text);
+  const hasGoal = /savings goal|need to save.*month|monthly saving/i.test(text);
+  const wrap = document.createElement('div'); wrap.className='d-flex flex-column gap-2';
+  const clean = text.replace(BREAKDOWN_RE,'').trim();
+  if (clean) { const m=document.createElement('div'); m.className='msg bot'; const av=mk('div','av','FC'); const bub=mk('div','bubble'); bub.textContent=clean; m.append(av,bub); wrap.appendChild(m); }
+  if (hasBd)   { const match=text.match(BREAKDOWN_RE); if(match){ const c=buildBreakdownCard(match[0]); if(c){ const m=document.createElement('div'); m.className='msg bot'; m.append(mk('div','av','FC'),c); wrap.appendChild(m); } } }
+  if (hasGoal) { const c=buildGoalCard(text); if(c){ const m=document.createElement('div'); m.className='msg bot'; m.append(mk('div','av','FC'),c); wrap.appendChild(m); } }
+  if (hasBd) {
+    const chips=['How do I cut grocery costs?','What if income goes up 10%?','Try different numbers','Set a savings goal'];
+    const cr=document.createElement('div'); cr.className='chip-row';
+    chips.forEach(txt=>{ const b=document.createElement('button'); b.className='chip'; b.textContent=txt; b.addEventListener('click',()=>{addMsg('user',txt);doSend(txt);}); cr.appendChild(b); });
+    wrap.appendChild(cr);
+  }
+  chatBox.appendChild(wrap); scrollBot();
+}
+
+function addMsg(role, text) {
+  if (role==='bot') { renderBot(text); return; }
+  const m=document.createElement('div'); m.className=`msg ${role}`;
+  m.append(mk('div','av','You'), Object.assign(mk('div','bubble'),{textContent:text}));
+  chatBox.appendChild(m); scrollBot();
+}
+
+function showTyping() {
+  const m=document.createElement('div'); m.className='msg bot'; m.id='typing';
+  const b=document.createElement('div'); b.className='typing-bubble'; b.innerHTML='<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+  m.append(mk('div','av','FC'),b); chatBox.appendChild(m); scrollBot();
+}
+function hideTyping() { const el=document.getElementById('typing'); if(el) el.remove(); }
+function scrollBot()  { chatBox.scrollTop=chatBox.scrollHeight; }
+function setDis(v)    { userInp.disabled=v; sendBtn.disabled=v; }
+
+async function doSend(text) {
+  setDis(true); showTyping();
+  try {
+    const r=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});
+    const d=await r.json(); hideTyping(); addMsg('bot',d.reply);
+  } catch { hideTyping(); addMsg('bot','Sorry, something went wrong. Please try again.'); }
+  finally { setDis(false); userInp.focus(); }
+}
+
+async function greet() {
+  setDis(true); showTyping();
+  try {
+    const r=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:''})});
+    const d=await r.json(); hideTyping(); addMsg('bot',d.reply);
+  } catch { hideTyping(); addMsg('bot','Hi! I had trouble connecting. Please refresh.'); }
+  finally { setDis(false); userInp.focus(); }
+}
+
+function handleSend() {
+  const t=userInp.value.trim(); if(!t) return;
+  addMsg('user',t); userInp.value=''; userInp.style.height='auto'; doSend(t);
+}
+sendBtn.addEventListener('click', handleSend);
+userInp.addEventListener('keydown', e => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleSend();} });
+userInp.addEventListener('input', () => { userInp.style.height='auto'; userInp.style.height=Math.min(userInp.scrollHeight,110)+'px'; });
+newChatBtn.addEventListener('click', async () => { await fetch('/reset',{method:'POST'}); chatBox.innerHTML=''; greet(); });
+
+/* ═══════════════ GOAL TRACKER ═══════════════ */
+function fmt(n, cur) { return (cur||'₹')+Number(n).toLocaleString('en-IN'); }
+
+document.getElementById('calcGoalBtn').addEventListener('click', calcGoal);
+
+function calcGoal() {
+  const cur    = document.getElementById('goalCurrency').value||'₹';
+  const target = parseFloat(document.getElementById('goalTarget').value)||0;
+  const months = parseInt(document.getElementById('goalMonths').value)||0;
+  const saving = parseFloat(document.getElementById('goalCurrentSaving').value)||0;
+  if (!target||!months) { alert('Please enter a goal amount and timeframe.'); return; }
+
+  fetch('/goal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target,months,current_monthly_saving:saving})})
+  .then(r=>r.json())
+  .then(d => {
+    const el  = document.getElementById('goalResult');
+    const ach = d.achievable;
+    const pct = d.pct_covered;
+    el.innerHTML = `
+      <div class="fc-card p-4 mb-3">
+        <div class="section-head"><i class="bi bi-trophy${ach?'-fill':''}"></i> Goal Plan</div>
+        <div class="row g-3 mb-3">
+          <div class="col-6"><div class="kpi-label">Goal Amount</div>          <div class="fw-bold fs-5">${fmt(d.target,cur)}</div></div>
+          <div class="col-6"><div class="kpi-label">Timeframe</div>            <div class="fw-bold fs-5">${d.months} months</div></div>
+          <div class="col-6"><div class="kpi-label">Required / Month</div>     <div class="fw-bold fs-5 ${ach?'text-success':'text-danger'}">${fmt(d.required_monthly,cur)}</div></div>
+          <div class="col-6"><div class="kpi-label">Current Monthly Saving</div><div class="fw-bold fs-5">${fmt(d.current_monthly,cur)}</div></div>
+        </div>
+        <div class="mb-3">
+          <div class="d-flex justify-content-between mb-1" style="font-size:13px"><span>Coverage</span><span class="fw-semibold">${pct}%</span></div>
+          <div class="progress"><div class="progress-bar ${ach?'bg-success':'bg-warning'}" style="width:${pct}%"></div></div>
+        </div>
+        <div class="goal-result-card ${ach?'achievable':'not-achievable'}">
+          ${ach
+            ? `<strong>✓ Goal is achievable!</strong> You're saving ${fmt(d.current_monthly,cur)}/month — ${fmt(d.current_monthly-d.required_monthly,cur)} buffer. Keep it up!`
+            : `<strong>✗ Shortfall: ${fmt(d.shortfall,cur)}/month.</strong> You need ${fmt(d.required_monthly,cur)}/month to hit this goal. Try reducing entertainment or festival spending first.`}
+        </div>
+      </div>`;
+    el.style.display = 'block';
+  });
+}
+
+document.querySelectorAll('#goalSection .chip').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('goalTarget').value = btn.dataset.goal;
+    document.getElementById('goalMonths').value = btn.dataset.months;
+    calcGoal();
+  });
+});
+
+/* ═══════════════ FAMILY BUDGET ═══════════════ */
+const EXP_FIELDS = [
+  {key:'housing',label:'Housing / Rent'},{key:'groceries',label:'Groceries'},
+  {key:'utilities',label:'Utilities'},{key:'transport',label:'Transport'},
+  {key:'education',label:'Education'},{key:'medical',label:'Medical'},
+  {key:'entertainment',label:'Entertainment'},{key:'festivals',label:'Festivals / Other'},
+  {key:'savings',label:'Savings / Investment'},
+];
+
+function addMemberForm() {
+  memberCount++;
+  const idx  = memberCount;
+  const wrap = document.createElement('div');
+  wrap.className  = 'member-form fade-in';
+  wrap.dataset.idx = idx;
+  wrap.innerHTML = `
+    <button class="remove-btn" title="Remove"><i class="bi bi-x-lg"></i></button>
+    <span class="member-badge">Member ${idx}</span>
+    <div class="row g-2 mb-2">
+      <div class="col-sm-6">
+        <label class="form-label">Name</label>
+        <input type="text" class="form-control mem-name" placeholder="e.g. Rahul">
+      </div>
+      <div class="col-sm-6">
+        <label class="form-label">Monthly income</label>
+        <input type="number" class="form-control mem-income" placeholder="e.g. 50000" min="0">
+      </div>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px;">Monthly Expenses</div>
+    <div class="exp-grid">
+      ${EXP_FIELDS.map(f=>`<div class="exp-field"><label>${f.label}</label><input type="number" class="exp-input" data-key="${f.key}" placeholder="0" min="0"></div>`).join('')}
+    </div>`;
+  document.getElementById('memberForms').appendChild(wrap);
+  wrap.querySelector('.remove-btn').addEventListener('click', () => wrap.remove());
+}
+
+document.getElementById('addMemberBtn').addEventListener('click', addMemberForm);
+document.getElementById('clearFamilyBtn').addEventListener('click', () => {
+  document.getElementById('memberForms').innerHTML = '';
+  memberCount = 0;
+  document.getElementById('householdSummary').style.display = 'none';
+});
+
+function collectFamilyData() {
+  const members = [];
+  document.querySelectorAll('.member-form').forEach(form => {
+    const name   = form.querySelector('.mem-name').value.trim()||'Member';
+    const income = parseFloat(form.querySelector('.mem-income').value)||0;
+    const exp    = {};
+    form.querySelectorAll('.exp-input').forEach(inp => { exp[inp.dataset.key]=parseFloat(inp.value)||0; });
+    members.push({name,income,expenses:exp});
+  });
+  return members;
+}
+
+document.getElementById('analyseHouseholdBtn').addEventListener('click', () => {
+  const cur     = document.getElementById('familyCurrency').value||'₹';
+  const members = collectFamilyData();
+  if (!members.length) { alert('Add at least one member to analyse.'); return; }
+
+  fetch('/dashboard',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({currency:cur,members})})
+  .then(r=>r.json())
+  .then(d => {
+    const hs   = document.getElementById('householdSummary');
+    const warn = d.total_surplus < 0;
+    const ach  = d.savings_pct >= 20;
+
+    // ── Summary numbers ──
+    let memberRows = d.members.map(m => {
+      const cls = m.savings_pct>=20?'good':m.savings_pct>=10?'warn':'over';
+      return `<div class="member-chip">
+        <div>
+          <div class="member-name"><i class="bi bi-person-circle me-1"></i>${m.name}</div>
+          <div class="member-meta">Income: ${fmt(m.income,cur)} &nbsp;·&nbsp; Expenses: ${fmt(m.total_expenses,cur)}</div>
+        </div>
+        <span class="badge-save ${cls}">Saving ${m.savings_pct}%</span>
+      </div>`;
+    }).join('');
+
+    // ── Category bars ──
+    let catRows = d.categories.map(c => {
+      const cls = c.status==='good'?'good':c.status==='warning'?'warning':'over';
+      const ico = {good:'✓',warning:'⚠',over:'✗'}[cls];
+      return `<div class="cat-row">
+        <span class="cat-lbl">${c.label}</span>
+        <div class="bar-wrap"><div class="bar-fill ${cls}" style="width:${Math.min(c.pct,100)}%"></div></div>
+        <span class="cat-pct">${c.pct}%</span>
+        <span class="cat-icon">${ico}</span>
+      </div>`;
+    }).join('');
+
+    hs.innerHTML = `
+      <div class="fc-card p-4 mb-3">
+        <div class="section-head"><i class="bi bi-house-fill"></i> Household Summary</div>
+        <div class="row g-3 mb-3">
+          <div class="col-6 col-md-3"><div class="kpi-label">Combined Income</div>  <div class="fw-bold fs-5">${fmt(d.total_income,cur)}</div></div>
+          <div class="col-6 col-md-3"><div class="kpi-label">Total Expenses</div>   <div class="fw-bold fs-5">${fmt(d.total_expenses,cur)}</div></div>
+          <div class="col-6 col-md-3"><div class="kpi-label">Net Surplus</div>      <div class="fw-bold fs-5 ${warn?'text-danger':'text-success'}">${fmt(d.total_surplus,cur)}</div></div>
+          <div class="col-6 col-md-3"><div class="kpi-label">Savings Rate</div>     <div class="fw-bold fs-5 ${ach?'text-success':warn?'text-danger':'text-warning'}">${d.savings_pct}%</div></div>
+        </div>
+        ${warn?'<div class="alert alert-danger py-2 mb-3" style="font-size:13px"><i class="bi bi-exclamation-triangle me-1"></i><strong>Expenses exceed income!</strong> Focus on reducing your top expense categories.</div>':''}
+        <div class="section-head mt-2"><i class="bi bi-bar-chart"></i> Category Breakdown</div>
+        ${catRows}
+        <hr style="border-color:var(--border);margin:12px 0">
+        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600">
+          <span>Total expenses</span><span>${fmt(d.total_expenses,cur)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-top:4px">
+          <span>Net surplus</span><span class="${warn?'text-danger':'text-success'}">${fmt(d.total_surplus,cur)}</span>
+        </div>
+      </div>
+      <div class="fc-card p-3 mb-3">
+        <div class="section-head"><i class="bi bi-people-fill"></i> Member Breakdown</div>
+        <div class="d-flex flex-column gap-2">${memberRows}</div>
+      </div>
+      <div class="fc-card p-3 mb-4">
+        <div class="section-head"><i class="bi bi-pie-chart"></i> 50 / 30 / 20 Rule</div>
+        <div style="display:flex;gap:0;height:18px;border-radius:10px;overflow:hidden;margin-bottom:8px">
+          <div style="width:${d.needs_pct}%;background:#3b82f6;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff">${d.needs_pct>8?d.needs_pct+'%':''}</div>
+          <div style="width:${d.wants_pct}%;background:#f59e0b;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff">${d.wants_pct>8?d.wants_pct+'%':''}</div>
+          <div style="width:${d.savings_pct_alloc}%;background:#22c55e;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff">${d.savings_pct_alloc>8?d.savings_pct_alloc+'%':''}</div>
+        </div>
+        <div class="d-flex gap-3 flex-wrap" style="font-size:12px">
+          <span><span style="color:#3b82f6">●</span> Needs: <strong>${d.needs_pct}%</strong> <span style="color:var(--muted)">(target ≤50%)</span></span>
+          <span><span style="color:#f59e0b">●</span> Wants: <strong>${d.wants_pct}%</strong> <span style="color:var(--muted)">(target ≤30%)</span></span>
+          <span><span style="color:#22c55e">●</span> Savings: <strong>${d.savings_pct_alloc}%</strong> <span style="color:var(--muted)">(target ≥20%)</span></span>
+        </div>
+      </div>`;
+    hs.style.display = 'block';
+    hs.scrollIntoView({behavior:'smooth'});
+  })
+  .catch(() => alert('Could not analyse household data. Please check your inputs.'));
+});
+
+/* ── INIT ── */
+addMemberForm();
+greet();
+</script>
+</body>
+</html>
