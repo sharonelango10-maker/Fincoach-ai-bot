@@ -3,7 +3,7 @@ FinCoach — AI-Powered Personal Finance Coach
 Powered by IBM watsonx.ai (Granite) | Flask Web App
 
 Run:
-    pip install -r requirements.txt 
+    pip install -r requirements.txt
     python app.py
 Then open: http://localhost:5000
 """
@@ -246,122 +246,6 @@ def goal():
         "shortfall":         round(shortfall, 2),
         "achievable":        achievable,
         "pct_covered":       pct_covered,
-    })
-
-
-@app.route("/dashboard", methods=["POST"])
-def dashboard():
-    """
-    Compute dashboard figures from posted budget data.
-    Body: {
-        currency: str,
-        members: [ { name, income, expenses: { housing, groceries, utilities,
-                      transport, education, medical, entertainment, festivals, savings } } ]
-    }
-    """
-    data     = request.get_json(force=True)
-    currency = data.get("currency", "₹")
-    members  = data.get("members", [])
-
-    CAT_KEYS = ["housing", "groceries", "utilities", "transport",
-                "education", "medical", "entertainment", "festivals", "savings"]
-
-    CAT_LABELS = {
-        "housing":       "Housing / Rent",
-        "groceries":     "Groceries",
-        "utilities":     "Utilities",
-        "transport":     "Transport",
-        "education":     "Education",
-        "medical":       "Medical",
-        "entertainment": "Entertainment",
-        "festivals":     "Festivals / Other",
-        "savings":       "Savings",
-    }
-
-    # 50/30/20 category type mapping
-    CAT_TYPE = {
-        "housing":       "needs",
-        "groceries":     "needs",
-        "utilities":     "needs",
-        "transport":     "needs",
-        "education":     "needs",
-        "medical":       "needs",
-        "entertainment": "wants",
-        "festivals":     "wants",
-        "savings":       "savings",
-    }
-
-    total_income   = 0.0
-    total_expenses = 0.0
-    combined_cats  = {k: 0.0 for k in CAT_KEYS}
-    member_summaries = []
-
-    for m in members:
-        income = float(m.get("income", 0))
-        exp    = m.get("expenses", {})
-        cats   = {k: float(exp.get(k, 0)) for k in CAT_KEYS}
-        m_total_exp = sum(cats.values())
-        m_savings   = income - m_total_exp
-
-        total_income   += income
-        total_expenses += m_total_exp
-        for k in CAT_KEYS:
-            combined_cats[k] += cats[k]
-
-        member_summaries.append({
-            "name":          m.get("name", "Member"),
-            "income":        income,
-            "total_expenses": m_total_exp,
-            "savings":       m_savings,
-            "savings_pct":   round((m_savings / income * 100) if income else 0, 1),
-            "categories":    cats,
-        })
-
-    total_surplus     = total_income - total_expenses
-    savings_pct       = round((total_surplus / total_income * 100) if total_income else 0, 1)
-
-    # Needs / Wants / Savings buckets
-    needs_total   = sum(combined_cats[k] for k, t in CAT_TYPE.items() if t == "needs")
-    wants_total   = sum(combined_cats[k] for k, t in CAT_TYPE.items() if t == "wants")
-    savings_total = combined_cats["savings"]
-
-    needs_pct   = round(needs_total   / total_income * 100 if total_income else 0, 1)
-    wants_pct   = round(wants_total   / total_income * 100 if total_income else 0, 1)
-    savings_pct_alloc = round(savings_total / total_income * 100 if total_income else 0, 1)
-
-    # Per-category breakdown for chart
-    categories = []
-    for k in CAT_KEYS:
-        amt  = combined_cats[k]
-        pct  = round(amt / total_income * 100 if total_income else 0, 1)
-        if k == "savings":
-            status = "good" if pct >= 20 else ("warning" if pct >= 10 else "over")
-        else:
-            thresh = {"housing": 35, "groceries": 15, "utilities": 8,
-                      "transport": 10, "education": 10, "medical": 5,
-                      "entertainment": 8, "festivals": 5}
-            t = thresh.get(k, 10)
-            status = "good" if pct <= t else ("warning" if pct <= t * 1.5 else "over")
-
-        categories.append({
-            "key":    k,
-            "label":  CAT_LABELS[k],
-            "amount": amt,
-            "pct":    pct,
-            "status": status,
-        })
-
-    return jsonify({
-        "currency":        currency,
-        "total_income":    total_income,
-        "total_expenses":  total_expenses,
-        "total_surplus":   total_surplus,
-        "savings_pct":     savings_pct,
-        "needs_pct":       needs_pct,
-        "wants_pct":       wants_pct,
-        "savings_pct_alloc": savings_pct_alloc,
-        "categories":      categories,
-        "members":         member_summaries,
     })
 
 
